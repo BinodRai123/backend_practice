@@ -1,5 +1,6 @@
 const express = require("express");
 const userModel = require("../models/user.model");
+const multer = require("multer");
 
 /* -- Crreating a Router -- */
 const userRouter = express.Router();
@@ -8,12 +9,13 @@ const userRouter = express.Router();
 /* -- Registering New User API -- */
 userRouter.post("/register",async(req, res) => {
     /* -- Name and Password From User */
-    const {name, password} = req.body;
+    const {name, password,music} = req.body;
 
     /* -- Registering New User In DB -- */
     await userModel.create({
         name: name,
-        password: password
+        password: password,
+        music:music
     })
 
     /* -- Sending SucessFull Message */
@@ -35,7 +37,6 @@ userRouter.get("/", async (req, res) => {
 
 /* -- Deleting Specific User API -- */
 userRouter.delete("/delete/:id", async (req, res) => {
-    /* -- Getting Id Of User -- */
     const id = req.params.id;
 
     /* -- Deleting User through Id -- */
@@ -54,10 +55,26 @@ userRouter.delete("/delete/:id", async (req, res) => {
 })
 
 /* -- LogIn API -- */
-userRouter.get("/login",(req,res) => {
-    const {name , password} = req.query;
+userRouter.post("/login",async (req,res) => {
+    const {name , password} = req.body;
 
-    console.log(name, password)
+    /* -- Searching The Name and Password in DB -- */
+    const user = await userModel.findOne({name});
+
+    /* -- Check if User Exist -- */
+    if(!user) return res.status(404).json({
+        message: "User Name not Found"
+    })
+
+    /* -- Check Password Does Match Or Not -- */
+    if(password != user.password ) return res.json({
+        message: "Password not Match"
+    })
+
+    res.status(200).json({
+        message: "Login Sucessfully"
+    })
+
 })
 
 module.exports = userRouter;
