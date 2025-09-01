@@ -1,7 +1,9 @@
 const express = require("express");
 
-const server = express();
 
+require("dotenv").config();
+
+const server = express();
 
 
 module.exports = server;
