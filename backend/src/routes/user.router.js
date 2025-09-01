@@ -5,18 +5,12 @@ const multer = require("multer");
 /* -- Crreating a Router -- */
 const userRouter = express.Router();
 
+const upLoad = multer({Storage: multer.memoryStorage()});
 
 /* -- Registering New User API -- */
-userRouter.post("/register",async(req, res) => {
-    /* -- Name and Password From User */
-    const {name, password,music} = req.body;
+userRouter.post("/register",upLoad.single("music"), async(req, res) => {
+    const user = req.body;
 
-    /* -- Registering New User In DB -- */
-    await userModel.create({
-        name: name,
-        password: password,
-        music:music
-    })
 
     /* -- Sending SucessFull Message */
     res.status(201).json({
