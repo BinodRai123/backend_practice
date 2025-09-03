@@ -1,74 +1,86 @@
 const express = require("express");
 const userModel = require("../models/user.model");
-const multer = require("multer");
+const jwt = require("jsonwebtoken");
+const jwt_secret = process.env.JWT_SECRET_KEY;
 
 /* -- Crreating a Router -- */
 const userRouter = express.Router();
 
-const upLoad = multer({Storage: multer.memoryStorage()});
-
 /* -- Registering New User API -- */
-userRouter.post("/register",upLoad.single("music"), async(req, res) => {
-    const user = req.body;
+userRouter.post("/register", async (req, res) => {
+  const { name, password } = req.body;
 
+  const user = await userModel.create({
+    name,
+    password,
+  });
 
-    /* -- Sending SucessFull Message */
-    res.status(201).json({
-        message:"user regsiter sucessfully"
-    })
-})
+  //Creates a token
+  const token = jwt.sign(
+    {
+      id: user._id,
+    },
+    jwt_secret
+  );
+
+  /* -- Sending SucessFull Message */
+  res.status(201).json({
+    message: "user regsiter sucessfully",
+    token: token,
+  });
+});
 
 /* -- Fetching All Users Data API -- */
-userRouter.get("/", async (req, res) => {
-    /* -- Fetching All Users From DB -- */
-    const users = await userModel.find();
-    
-    /* -- Sending All Users -- */
-    res.status(200).json({
-        users: users
-    })
-})
+userRouter.get("/user", async (req, res) => {
+  const { token } = req.body;
 
-/* -- Deleting Specific User API -- */
-userRouter.delete("/delete/:id", async (req, res) => {
-    const id = req.params.id;
+  if (!token) {
+    res.status(401).json({
+      message: "unAuthorized",
+    });
+  }
 
-    /* -- Deleting User through Id -- */
-    const DeletedUser = await userModel.findByIdAndDelete(id);
+  try {
+    const decoded = jwt.verify(token, jwt_secret);
 
-    /* -- If User Not In The DB */
-    if(!DeletedUser) return res.status(404).json({
-        message: "User Not Found"
+    const user = await userModel.findOne({
+        _id: decoded.id
     })
 
-    /* -- Response Deleted Sucessfull -- */
-    res.status(200).json({
-        message: "User Deleted Sucessfully "
+    res.status(201).json({
+        message: "authentication sucessfull",
+        user: user
     })
 
-})
+  } catch (error) {
+    return res.status(401).json({
+      message: "invalid token",
+    });
+  }
+});
 
 /* -- LogIn API -- */
-userRouter.post("/login",async (req,res) => {
-    const {name , password} = req.body;
+userRouter.post("/login", async (req, res) => {
+  const { name, password } = req.body;
 
-    /* -- Searching The Name and Password in DB -- */
-    const user = await userModel.findOne({name});
+  /* -- Searching The Name and Password in DB -- */
+  const user = await userModel.findOne({ name });
 
-    /* -- Check if User Exist -- */
-    if(!user) return res.status(404).json({
-        message: "User Name not Found"
-    })
+  /* -- Check if User Exist -- */
+  if (!user)
+    return res.status(404).json({
+      message: "User Name not Found",
+    });
 
-    /* -- Check Password Does Match Or Not -- */
-    if(password != user.password ) return res.json({
-        message: "Password not Match"
-    })
+  /* -- Check Password Does Match Or Not -- */
+  if (password != user.password)
+    return res.json({
+      message: "Password not Match",
+    });
 
-    res.status(200).json({
-        message: "Login Sucessfully"
-    })
-
-})
+  res.status(200).json({
+    message: "Login Sucessfully",
+  });
+});
 
 module.exports = userRouter;

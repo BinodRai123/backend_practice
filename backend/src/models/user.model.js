@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema({
     name:String,
     password:Number,
-    music:String
 })
 
 const userModel = mongoose.model("user", userSchema);
