@@ -16,23 +16,20 @@ userRouter.post("/register", async (req, res) => {
   });
 
   //Creates a token
-  const token = jwt.sign(
-    {
-      id: user._id,
-    },
-    jwt_secret
-  );
+  const token = jwt.sign({id: user._id,},jwt_secret);
+
+  res.cookie("token", token);
 
   /* -- Sending SucessFull Message */
   res.status(201).json({
-    message: "user regsiter sucessfully",
-    token: token,
+    message: "user regsiter sucessfully"
   });
 });
 
 /* -- Fetching All Users Data API -- */
 userRouter.get("/user", async (req, res) => {
-  const { token } = req.body;
+  const token = req.cookies.token;
+  console.log(token)
 
   if (!token) {
     res.status(401).json({
@@ -43,15 +40,16 @@ userRouter.get("/user", async (req, res) => {
   try {
     const decoded = jwt.verify(token, jwt_secret);
 
-    const user = await userModel.findOne({
-        _id: decoded.id
-    })
+    const user = await userModel
+      .findOne({
+        _id: decoded.id,
+      })
+      .select("-password -__v");
 
     res.status(201).json({
-        message: "authentication sucessfull",
-        user: user
-    })
-
+      message: "authentication sucessfull",
+      user: user,
+    });
   } catch (error) {
     return res.status(401).json({
       message: "invalid token",
