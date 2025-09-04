@@ -1,3 +1,4 @@
+const { model } = require("mongoose");
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 
@@ -32,4 +33,36 @@ async function regsiterController(req,res){
         message:"User Register Sucessfull"
     })
 
+}
+
+async function loginController(req,res){
+    const token = req.cookies.token;
+
+    if(!token){
+        res.status(401).json({
+            message:"unauthorized"
+        })
+    }
+
+    try {
+        const decode = jwt.verify(token,process.env.JWT_SECRET_KEY);
+        const user = await userModel.findOne({
+            _id:decode.id
+        }).select("-password -__v");
+
+        res.status(200).json({
+            message:"user details",
+            user:user
+        })
+    } catch (error) {
+        json.status(401).json({
+            message:"invalid token"
+        })
+    }
+}
+
+
+module.exports = {
+    regsiterController,
+    loginController
 }
