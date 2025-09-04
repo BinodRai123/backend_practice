@@ -38,29 +38,33 @@ async function regsiterController(req,res){
 }
 
 async function loginController(req,res){
-    const token = req.cookies.token;
+    const {name, password} = req.body;
 
-    if(!token){
-        res.status(401).json({
-            message:"unauthorized"
+    const user = await userModel.findOne({
+        name: name
+    })
+
+    if(!user){
+        return res.status(400).json({
+            message:"invalid user name"
         })
     }
 
-    try {
-        const decode = jwt.verify(token,process.env.JWT_SECRET_KEY);
-        const user = await userModel.findOne({
-            _id:decode.id
-        }).select("-password -__v");
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        res.status(200).json({
-            message:"user details",
-            user:user
-        })
-    } catch (error) {
-        json.status(401).json({
-            message:"invalid token"
+    if(!isPasswordValid){
+        return res.status(400).json({
+            message:"invalid password "
         })
     }
+
+    const token = jwt.sign({id:user._id}, process.env.JWT_SECRET_KEY);
+    res.cookie("token",token);
+
+    res.status(200).json({
+        message:"login sucessfully",
+        user:user
+    })
 }
 
 
