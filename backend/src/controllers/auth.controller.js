@@ -1,6 +1,7 @@
 const { model } = require("mongoose");
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 async function regsiterController(req,res){
    const {name, password} = req.body;
@@ -17,7 +18,8 @@ async function regsiterController(req,res){
 
     // new user register in DB
     const user = await userModel.create({
-        name,password
+        name,
+        password: await bcrypt.hash(password, 10)
     });
     console.log(user._id)
 
